@@ -1,0 +1,26 @@
+Starting part one
+
+To Do:
+1. for each site query for all the catagories :
+Root
+Computers
+Hardware
+Programming
+Health
+Fitness
+Diseases
+Sports
+Basketball
+Soccer
+
+and calculate the "coverage = number of docs in the catagory" and "specificity = number of documents in the catagory
+/ all documents in the site"
+
+and then print ou the catagory.
+
+END OF PART 1
+XXXXXXXXXXX----------------XXXXXXXXXXXXXXX--------------XXXXXXXXXXXXX----------------XXXXXXXXXXXX---------------XXXXXXX
+
+Starting part two
+
+To DO:
