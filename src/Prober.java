@@ -1,10 +1,55 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.RandomAccessFile;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.TreeMap;
+import java.util.TreeSet;
+
+class docList {
+	
+	String subCategory;
+	String mainCategory;
+	ArrayList<String> results; // contains URL specific to each category 
+	ArrayList<String> freqList; // contains Word list of each URL pointed by results
+	
+	docList()
+	{
+		subCategory = new String();
+		mainCategory = new String();
+		results = new ArrayList<String>();
+		freqList = new ArrayList<String>();
+	}
+	
+	docList(String m, String s, ArrayList<String> a)
+	{
+		subCategory = new String();
+		mainCategory = new String();
+		results = new ArrayList<String>();
+		freqList = new ArrayList<String>();
+		subCategory = s;
+		mainCategory = m;
+		results = a;	
+	}
+	
+	docList(String m, String s, ArrayList<String> a, ArrayList<String> f)
+	{
+		subCategory = new String();
+		mainCategory = new String();
+		results = new ArrayList<String>();
+		freqList = new ArrayList<String>();
+		subCategory = s;
+		mainCategory = m;
+		results = a;	
+		freqList = f;
+	}
+}
 
 
 class Prober{
@@ -23,6 +68,9 @@ class Prober{
 	static int coverageTh = 0;
 	static Double specificityTh = 0.0;
 	static String classificationStr;
+	static ArrayList<docList> docs = new ArrayList<docList>();
+	static Map<String, Integer> wordFreq;
+	static docList docL = new docList();
 	
 	public static void main(String [] args) throws Exception{
 		initProber();
@@ -67,8 +115,166 @@ class Prober{
 			classificationStr = "/Root";
 				
 		DisplayResult();
+		
+		//get content summary for matching categories
+				if(classificationStr.contains("Root"))
+			    getContentSummary("Root");
+				if(classificationStr.contains("Health"))
+				    getContentSummary("Health");
+				if(classificationStr.contains("Computers"))
+				    getContentSummary("Computers");
+				if(classificationStr.contains("Sports"))
+				    getContentSummary("Sports");
+				
+				if(classificationStr.contains("Health"))
+					outputTopicContentSummary("Health");
+				if(classificationStr.contains("Computers"))
+					outputTopicContentSummary("Computers");
+				if(classificationStr.contains("Sports"))
+					outputTopicContentSummary("Sports");
+				
+				if(classificationStr.contains("Root"))
+					outputTopicContentSummary("Root");
+			   
+				printSample();
+			    
+			    
 	}
 	
+	// get word List for specified Category 
+		public static void getContentSummary(String cat)
+		{
+			Set s  = new TreeSet() ;
+			ArrayList<String> f ;
+			for(int i =0; i < docs.size() ; i++)
+			{
+			  f = new ArrayList<String>();
+			  f.add("0");
+			  docL = docs.get(i);
+			  if(cat.equals(docL.mainCategory))
+			  {
+				  if(Integer.parseInt(docL.results.get(0)) >= 4) 
+				  {
+					
+				     for(int j =1; j < docL.results.size() ; j++)
+				     {
+				        s = getWordsLynx.runLynx(docL.results.get(j));	
+				        f.add(s.toString());
+				     }
+				     
+				     docs.set(i, new docList(docL.mainCategory, docL.subCategory, docL.results, f));
+				  }   
+			  }
+			}
+			
+		}
+	
+		public static String calculateContentSummary(String cat)
+		{
+			String buf = new String();
+			wordFreq = new TreeMap<String,Integer>();	
+			ArrayList<String> category = new ArrayList<String>();
+			
+			if(cat.equals("Root"))
+			{
+				category.add("Root");
+				if(classificationStr.contains("Computers"))
+					category.add("Computers");
+				if(classificationStr.contains("Health"))
+					category.add("Health");
+				if(classificationStr.contains("Sports"))
+					category.add("Sports");			
+			}
+			else category.add(cat);
+			
+			for(int i =0 ; i < docs.size() ; i++)
+		    {
+		    	docL = docs.get(i);
+		    	if(category.contains(docL.mainCategory))
+		    	{
+		    		for(int j =0; j < docL.freqList.size() ; j++)
+		    		{
+		    			String s = new String();
+		    			s= docL.freqList.get(j);
+		    			StringTokenizer st = new StringTokenizer(s, "[,]");
+		    			while(st.hasMoreTokens())
+		    			{
+		    				String word = st.nextToken();
+		    				if(wordFreq.containsKey(word))
+		    				{
+		    					int count = wordFreq.get(word);
+		    					count +=1;
+		    					wordFreq.remove(word);
+		    					wordFreq.put(word, count);
+		    					
+		    				}
+		    				else
+		    				{
+		    					wordFreq.put(word, 1);
+		    				}
+		    			}
+		    			
+		    		}
+		    	}
+		    }
+			
+			 Iterator<String> it = wordFreq.keySet().iterator();
+			 while (it.hasNext())
+			 {
+	             String key = (String) it.next();
+	             Integer value = wordFreq.get(key);
+	             buf += key + "    " + value + "\n";
+			 }
+			  
+			return buf;
+		}
+		
+		public static void outputTopicContentSummary(String cat) 
+		{
+			String docName = cat + "-" + site + ".txt";
+			String buf = new String();
+			buf = calculateContentSummary(cat);
+			try
+			{
+			   RandomAccessFile randomAccessFile  = new RandomAccessFile("/home/vr2300/workspace/"+docName ,"rw");
+			   randomAccessFile.writeBytes(buf.toString());
+			   randomAccessFile.close();
+			}
+			catch(Exception e) {}
+			
+			
+		}
+		//Prints  URL and List of Words of the Samples where the database belongs
+		public static void printSample() 
+		{
+			System.out.println("Press Enter to Continue:");
+			Scanner sc = new Scanner(System.in);
+			sc.nextLine();
+			
+			for(int i =0; i < docs.size() ; i++)
+		    {
+		    	docL = docs.get(i);
+		    	if(classificationStr.contains(docL.mainCategory))
+		    	{	
+		    	   System.out.println("Main:" + docL.mainCategory);
+		           System.out.println("Sub:" + docL.subCategory );
+		        
+		          if(docL.mainCategory.length() > 0)
+		          {	
+		             System.out.println("Results Count " + docL.results.get(0));
+		             for(int j =0; j< docL.results.size(); j++)
+		             {
+		                System.out.println( docL.results.get(j));
+		                if(j < docL.freqList.size())
+		                System.out.println( docL.freqList.get(j));
+		              
+		             }
+		          }   
+		       }
+		    }
+		}
+
+		
 	public static void initProber() {
 		
 		RootQueries = new ArrayList<String>();
