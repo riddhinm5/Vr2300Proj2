@@ -8,7 +8,7 @@ import java.util.Scanner;
 
 
 class Prober{
-	
+	static Map<Integer, String> heirarchy;
 	static ArrayList<String> RootQueries;
 	static ArrayList<String> ComputerQueries;
 	static ArrayList<String> SportQueries;
@@ -30,32 +30,42 @@ class Prober{
 		RootQuery();
 
 		//classificationStr = "Root";
-
-		for(String key : categoryCoverage.keySet())
-			if(categoryCoverage.get(key) >= coverageTh){
-				if(key == "Computers") {
+		//ReturnCoverage();
+		//for(String key : categoryCoverage.keySet())
+		for( int i = 2 ; i <= heirarchy.size() ; i++ )
+			if(categoryCoverage.get(heirarchy.get(i)) >= coverageTh){
+				if(heirarchy.get(i) == "Computers") {
+					Thread.sleep(6000);
 					ComputerQuery1();
 					ReturnSpecificity();
 				}
-				else if(key == "Sports") {
+				else if(heirarchy.get(i) == "Sports") {
+					Thread.sleep(6000);
 					SportQuery1();
 					ReturnSpecificity();
 				}
-				else if(key == "Health") {
+				else if(heirarchy.get(i) == "Health") {
+					Thread.sleep(6000);
 					HealthQuery1();
 					ReturnSpecificity();
 				}
 			}
 		
-		for(String key : categoryCoverage.keySet())
-			if(categoryCoverage.get(key) >= coverageTh){
-				if(categorySpecificity.get(key) >= specificityTh){
-					classificationStr += "/";
-					classificationStr += key;
+		classificationStr = "/";
+		boolean flag = true;
+		//for(String key : categoryCoverage.keySet())
+		for( int i = 1 ; i <= heirarchy.size(); i++ ){
+			if(categoryCoverage.get(heirarchy.get(i)) >= coverageTh){
+				if(categorySpecificity.get(heirarchy.get(i)) >= specificityTh){
+					classificationStr += heirarchy.get(i)+" /";
 				}
 			}
+			else flag = false;
+		}
 		
-		
+		if( flag )
+			classificationStr = "/Root";
+				
 		DisplayResult();
 	}
 	
@@ -66,33 +76,33 @@ class Prober{
 		SportQueries = new ArrayList<String>();
 		HealthQueries = new ArrayList<String>();
 		
+		heirarchy = new HashMap<Integer, String>();
+		heirarchy.put(1, "Root");
+		heirarchy.put(2, "Computers");
+		heirarchy.put(3, "Hardware");
+		heirarchy.put(4, "Programming");
+		heirarchy.put(5, "Health");
+		heirarchy.put(6, "Diseases");
+		heirarchy.put(7, "Fitness");
+		heirarchy.put(8, "Sports");
+		heirarchy.put(9, "Soccer");
+		heirarchy.put(10, "Basketball");
+		
 		categoryCoverage = new HashMap<String, Integer>();
-		categoryCoverage.put("Computers", 0);
-		categoryCoverage.put("Health", 0);
-		categoryCoverage.put("Sports", 0);
 		categoryCoverage.put("Root", 0);
+		categoryCoverage.put("Computers", 0);
 		categoryCoverage.put("Hardware", 0);
 		categoryCoverage.put("Programming", 0);
+		categoryCoverage.put("Health", 0);
 		categoryCoverage.put("Diseases", 0);
 		categoryCoverage.put("Fitness", 0);
+		categoryCoverage.put("Sports", 0);
 		categoryCoverage.put("Basketball", 0);
 		categoryCoverage.put("Soccer", 0);
 		
 		categorySpecificity = new HashMap<String, Double>();
-		categorySpecificity.put("Computers", 0.0);
-		categorySpecificity.put("Health", 0.0);
-		categorySpecificity.put("Sports", 0.0);
-		categorySpecificity.put("Root", 0.0);
-		categorySpecificity.put("Hardware", 0.0);
-		categorySpecificity.put("Programming", 0.0);
-		categorySpecificity.put("Diseases", 0.0);
-		categorySpecificity.put("Fitness", 0.0);
-		categorySpecificity.put("Basketball", 0.0);
-		categorySpecificity.put("Soccer", 0.0);
-		
-		FirstQuery = new ArrayList<String>();
-		FirstQuery.add("a");
-		FirstQuery.add("the");
+		for(String key : categoryCoverage.keySet())
+			categorySpecificity.put(key, 0.0);
 		
 		gr = new GetResults();
 		
@@ -105,6 +115,18 @@ class Prober{
 		
 		System.out.println("enter the specificity threshold:");
 		specificityTh = sc.nextDouble();
+		
+		String nameOfSite = "";
+		for(int i = 0 ; i < site.length() ; i++ )
+			if(site.charAt(i) != '.')
+				nameOfSite += site.charAt(i);
+			else break;
+		
+		FirstQuery = new ArrayList<String>();
+		FirstQuery.add("a");
+		FirstQuery.add("the");
+		FirstQuery.add("");
+		FirstQuery.add(nameOfSite);
 	}
 	
 	public static void setQueries()throws Exception {
@@ -134,10 +156,10 @@ class Prober{
 	public static void RootQuery()throws Exception {
 		//using generic words like "a" to get total number of results in the hidden database
 		int numInRoot = 0;
-		if(numDocsIntotal <= gr.get(site, FirstQuery.get(0)))
-			numDocsIntotal = gr.get(site, FirstQuery.get(0));
-		if(numDocsIntotal <= gr.get(site, FirstQuery.get(1)))
-			numDocsIntotal = gr.get(site, FirstQuery.get(1));
+		int total =0;
+		for( int i = 0 ; i < FirstQuery.size() ; i++ )
+		if(numDocsIntotal <= (total = gr.get(site, FirstQuery.get(i))))
+			numDocsIntotal = total;
 		
 			//to check the coverage in each category of the root
 			for(int i = 0; i < RootQueries.size(); i++) {
@@ -151,6 +173,8 @@ class Prober{
 			}
 			
 			categoryCoverage.put("Root", numInRoot);
+			if(numInRoot >= numDocsIntotal)
+				numDocsIntotal = numInRoot;
 	}
 	
 	public static void ComputerQuery(){
@@ -209,6 +233,11 @@ class Prober{
 		for(String keys : categoryCoverage.keySet() )
 			categorySpecificity.put(keys,(double)categoryCoverage.get(keys)/(double)numDocsIntotal);
 		return specificity;
+	}
+	
+	public static void ReturnCoverage() {
+		for(String keys : categoryCoverage.keySet())
+			categoryCoverage.put(keys, (categoryCoverage.get(keys)/categoryCoverage.get("Root")));
 	}
 	
 	public static void DisplayResult(){	
